@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"grpfile/chunky"
 	"io"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
+
+	"github.com/mipsmonsta/chunky/chunky"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
