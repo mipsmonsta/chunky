@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "/chunky";
+
+message Chunk {
+	oneof body {
+		string file_name = 1;
+		bytes content = 2;
+	}
+}
+
+service ChunkUploadService {
+	rpc Upload(stream Chunk) returns (UploadStatus);
+}
+
+enum UploadStatusCode {
+	UNKNOWN = 0;
+	OK = 1;
+	FAILED = 2;
+}
+
+message UploadStatus {
+	string message = 1;
+	UploadStatusCode code = 2;
+}
+
+
