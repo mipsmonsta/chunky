@@ -6,7 +6,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"grpfile/chunky"
+
+	"github.com/mipsmonsta/chunky/chunky"
+
 	"io"
 	"log"
 	"os"
