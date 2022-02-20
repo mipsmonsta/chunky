@@ -15,6 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	file_Dir = "./files"
+)
 type chunkyService struct{
 	chunky.UnimplementedChunkUploadServiceServer
 }
@@ -49,7 +52,7 @@ func (c *chunkyService) Upload(stream chunky.ChunkUploadService_UploadServer) er
 	}
 
 	//save data
-	f, err := os.Create("../files/" + base_filename)
+	f, err := os.Create(file_Dir + "/" + base_filename)
 	if err != nil {
 		return status.Error(codes.Internal, "file not created")
 	}
@@ -71,6 +74,12 @@ func registerServices( s *grpc.Server){
 	chunky.RegisterChunkUploadServiceServer(s, &chunkyService{})
 }
 
+func createFilesDir(){
+	if _, err := os.Stat(file_Dir); os.IsNotExist(err) {
+		_ = os.Mkdir(file_Dir, os.ModeDir)
+	}
+}
+
 func main() {
 	l, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -78,6 +87,8 @@ func main() {
 		fmt.Println(e)
 		os.Exit(1)
 	}
+
+	createFilesDir()
 
 	s := grpc.NewServer()
 	registerServices(s)
