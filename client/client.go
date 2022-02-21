@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 
 	"github.com/mipsmonsta/chunky/chunky"
 
@@ -16,6 +17,10 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	Port=":50051"
 )
 
 func setupGRpcConnection(addr string) (*grpc.ClientConn, error) {
@@ -32,12 +37,23 @@ func getChunkUploadServiceClient(conn *grpc.ClientConn) chunky.ChunkUploadServic
 }
 
 var file_path string
-
+var addr_ip net.IP
 func setupFlags(){
 	//create a new flag set
 	fs := flag.NewFlagSet("ChunkUpload", flag.ExitOnError)
 	fs.SetOutput(os.Stdout)
 	
+	fs.Func("ip", "IP address of Server", func(s string) error {
+
+		if ip := net.ParseIP(s); ip != nil{
+			addr_ip = ip
+			return nil
+		}
+
+		return errors.New("ip address is invalid")
+
+	})
+
 	//do validate of the file flag value
 	fs.Func("file", "File path to upload", func(s string) error {
 		//check file exists
@@ -52,7 +68,7 @@ func setupFlags(){
 	fs.Parse(os.Args[1:])
 
 	// won't interfere if <command> -h[--help]
-	if file_path == "" {// if --file is not set, invoke Usage
+	if file_path == "" || addr_ip == nil {// if --file is not set, invoke Usage
 		fs.Usage() //cannot use PrintDefaults() a
 				   //s the "Usage ..." won't show
 		os.Exit(1) //exit 
@@ -69,7 +85,7 @@ func init(){
 
 func main(){
 
-	conn, err := setupGRpcConnection(":50051")
+	conn, err := setupGRpcConnection(addr_ip.String() + Port)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error in setting up Grpc connection: %w", err))
 		os.Exit(1)
