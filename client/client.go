@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -9,8 +8,8 @@ import (
 	"net"
 
 	"github.com/mipsmonsta/chunky/chunky"
+	"github.com/mipsmonsta/chunky/util"
 
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -111,56 +110,6 @@ func main(){
 		log.Fatal(err)
 	}
 
-	sendChunks(absFilePath, &stream)
+	util.SendChunks(absFilePath, &stream)
 	
-}
-
-
-func sendChunks(absFilePath string, stream *chunky.ChunkUploadService_UploadClient) {
-
-	fileName := filepath.Base(absFilePath)
-
-	fn := chunky.Chunk_FileName{
-		FileName: fileName,
-	}
-	c := chunky.Chunk{
-		Body: &fn,
-	}
-
-	err := (*stream).Send(&c)
-	if err != nil {
-		panic(err)
-	}
-
-	f, err := os.Open(absFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer f.Close()
-
-	dataReader := bufio.NewReader(f)
-
-	for {
-		b, err := dataReader.ReadByte()
-		if err == io.EOF {
-			log.Printf("Completed sending file...%q\n", fileName)
-			break
-		}
-		bContent := chunky.Chunk_Content{
-			Content: []byte{b},
-		}
-		c:= chunky.Chunk{
-			Body: &bContent,
-		}
-		err = (*stream).Send(&c)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	_, err = (*stream).CloseAndRecv()
-	if err != nil {
-		fmt.Println(err)
-	}
 }
