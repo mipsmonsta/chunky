@@ -68,9 +68,16 @@ func SendChunks(absFilePath string, stream *chunky.ChunkUploadService_UploadClie
 }
 
 //For servers to use
-const (
-	file_Dir = "./files"
+var (
+	File_Dir = "./files"
 )
+
+type DoSomething struct {
+	Function func(string)
+}
+
+// hook for processing the file path
+var DefaultSomething DoSomething = DoSomething{Function: nil}
 
 type chunkyService struct{
 	chunky.UnimplementedChunkUploadServiceServer
@@ -106,7 +113,8 @@ func (c *chunkyService) Upload(stream chunky.ChunkUploadService_UploadServer) er
 	}
 
 	//save data
-	f, err := os.Create(file_Dir + "/" + base_filename)
+	filePath := File_Dir + "/" + base_filename
+	f, err := os.Create(File_Dir + "/" + base_filename)
 	if err != nil {
 		return status.Error(codes.Internal, "file not created")
 	}
@@ -121,6 +129,11 @@ func (c *chunkyService) Upload(stream chunky.ChunkUploadService_UploadServer) er
 	if err != nil {
 		return err
 	}
+
+	if DefaultSomething.Function != nil {
+		DefaultSomething.Function(filePath)
+	}
+
 	return nil
 }
 
@@ -129,11 +142,10 @@ func RegisterServices(s *grpc.Server){
 }
 
 func CreateFilesDir(customFileDir *string){
-	var file_directory string = file_Dir // use default const file_Dir if customFileDir is not nil
 	if customFileDir != nil {
-		file_directory = *customFileDir
+		File_Dir = *customFileDir
 	}
-	if _, err := os.Stat(file_directory); os.IsNotExist(err) {
-		_ = os.Mkdir(file_Dir, os.ModeDir)
+	if _, err := os.Stat(File_Dir); os.IsNotExist(err) {
+		_ = os.Mkdir(File_Dir, os.ModeDir)
 	}
 }
