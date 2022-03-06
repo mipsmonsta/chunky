@@ -2,83 +2,15 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 
-	"github.com/mipsmonsta/chunky/chunky"
-
+	"github.com/mipsmonsta/chunky/util"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-const (
-	file_Dir = "./files"
-)
-type chunkyService struct{
-	chunky.UnimplementedChunkUploadServiceServer
-}
 
-func (c *chunkyService) Upload(stream chunky.ChunkUploadService_UploadServer) error {
-	var data []byte
-	var base_filename string
-	var uStatus chunky.UploadStatus
-	for {
-		r, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		
-		switch t:= r.Body.(type) {
-		case *chunky.Chunk_FileName:
-			base_filename = r.GetFileName()
-		case *chunky.Chunk_Content:
-			b := r.GetContent()
-			data = append(data, b...)
-		case nil:
-			return status.Error(codes.InvalidArgument, "Message doesn't contain fileName or Content")
-		default:
-			
-			return status.Errorf(codes.FailedPrecondition, "Unexpected message type: $s", t)
-		}
-	}
-	//check filename is just base i.e. last path item
-	pathList := filepath.SplitList(base_filename)
-	if len(pathList) > 1 {
-		return status.Error(codes.Internal, "filename is not just base name")
-	}
-
-	//save data
-	f, err := os.Create(file_Dir + "/" + base_filename)
-	if err != nil {
-		return status.Error(codes.Internal, "file not created")
-	}
-	defer f.Close()
-	f.Write(data)
-	
-	uStatus = chunky.UploadStatus{
-		Message: "Data received",
-		Code: chunky.UploadStatusCode_OK,
-	}
-	err = stream.SendAndClose(&uStatus)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func registerServices( s *grpc.Server){
-	chunky.RegisterChunkUploadServiceServer(s, &chunkyService{})
-}
-
-func createFilesDir(){
-	if _, err := os.Stat(file_Dir); os.IsNotExist(err) {
-		_ = os.Mkdir(file_Dir, os.ModeDir)
-	}
-}
 
 func main() {
 	l, err := net.Listen("tcp", ":50051")
@@ -88,10 +20,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	createFilesDir()
+	util.CreateFilesDir(nil)
 
 	s := grpc.NewServer()
-	registerServices(s)
+	util.RegisterServices(s)
 	log.Fatal(s.Serve(l))
 
 }
