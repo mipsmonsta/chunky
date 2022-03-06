@@ -39,7 +39,7 @@ func SendChunks(absFilePath string, stream *chunky.ChunkUploadService_UploadClie
 
 	dataReader := bufio.NewReader(f)
 
-	var p []byte = make([]byte, 100)
+	var p []byte = make([]byte, 1024)
 
 	for {
 		n, err := dataReader.Read(p)
