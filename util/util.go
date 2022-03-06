@@ -146,6 +146,6 @@ func CreateFilesDir(customFileDir *string){
 		File_Dir = *customFileDir
 	}
 	if _, err := os.Stat(File_Dir); os.IsNotExist(err) {
-		_ = os.Mkdir(File_Dir, 0700)
+		_ = os.Mkdir(File_Dir, os.ModePerm)
 	}
 }
